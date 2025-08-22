@@ -10,92 +10,112 @@ const PORT = process.env.PORT || 5000;
 const COC_API = "https://api.clashofclans.com/v1";
 const TOKEN = process.env.COC_TOKEN;
 
-// Middleware
+// Middleware for CORS
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   next();
 });
 
-// Utility fetcher
-async function cocFetch(endpoint) {
-  const res = await fetch(`${COC_API}${endpoint}`, {
-    headers: { Authorization: `Bearer ${TOKEN}` },
-  });
-  return res.json();
+// Helper function for API calls
+async function cocFetch(endpoint, res) {
+  try {
+    const response = await fetch(`${COC_API}${endpoint}`, {
+      headers: { Authorization: `Bearer ${TOKEN}` },
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
 
-// -------------------- CLANS --------------------
+//
+// 🏰 Clans
+//
 app.get("/clan/:tag", (req, res) =>
-  cocFetch(`/clans/${encodeURIComponent("#" + req.params.tag)}`).then((data) =>
-    res.json(data)
-  )
+  cocFetch(`/clans/%23${req.params.tag}`, res)
 );
-
 app.get("/clan/:tag/members", (req, res) =>
-  cocFetch(`/clans/${encodeURIComponent("#" + req.params.tag)}/members`).then(
-    (data) => res.json(data)
-  )
+  cocFetch(`/clans/%23${req.params.tag}/members`, res)
 );
-
 app.get("/clan/:tag/warlog", (req, res) =>
-  cocFetch(`/clans/${encodeURIComponent("#" + req.params.tag)}/warlog`).then(
-    (data) => res.json(data)
-  )
+  cocFetch(`/clans/%23${req.params.tag}/warlog`, res)
 );
-
 app.get("/clan/:tag/currentwar", (req, res) =>
-  cocFetch(
-    `/clans/${encodeURIComponent("#" + req.params.tag)}/currentwar`
-  ).then((data) => res.json(data))
+  cocFetch(`/clans/%23${req.params.tag}/currentwar`, res)
+);
+app.get("/clan/:tag/leaguegroup", (req, res) =>
+  cocFetch(`/clans/%23${req.params.tag}/currentwar/leaguegroup`, res)
+);
+app.get("/clan/:tag/rounds", (req, res) =>
+  cocFetch(`/clans/%23${req.params.tag}/currentwar/rounds`, res)
 );
 
-app.get("/clan/:tag/capitalraidseasons", (req, res) =>
-  cocFetch(
-    `/clans/${encodeURIComponent("#" + req.params.tag)}/capitalraidseasons`
-  ).then((data) => res.json(data))
-);
-
-// -------------------- PLAYERS --------------------
+//
+// 🧑 Players
+//
 app.get("/player/:tag", (req, res) =>
-  cocFetch(`/players/${encodeURIComponent("#" + req.params.tag)}`).then(
-    (data) => res.json(data)
+  cocFetch(`/players/%23${req.params.tag}`, res)
+);
+
+//
+// 🏆 Leagues
+//
+app.get("/leagues", (req, res) => cocFetch(`/leagues`, res));
+app.get("/leagues/:leagueId", (req, res) =>
+  cocFetch(`/leagues/${req.params.leagueId}`, res)
+);
+app.get("/leagues/:leagueId/seasons", (req, res) =>
+  cocFetch(`/leagues/${req.params.leagueId}/seasons`, res)
+);
+app.get("/leagues/:leagueId/seasons/:seasonId", (req, res) =>
+  cocFetch(
+    `/leagues/${req.params.leagueId}/seasons/${req.params.seasonId}`,
+    res
   )
 );
 
-// -------------------- LOCATIONS --------------------
-app.get("/locations", (req, res) =>
-  cocFetch(`/locations`).then((data) => res.json(data))
+//
+// 🌍 Locations
+//
+app.get("/locations", (req, res) => cocFetch(`/locations`, res));
+app.get("/locations/:locationId", (req, res) =>
+  cocFetch(`/locations/${req.params.locationId}`, res)
+);
+app.get("/locations/:locationId/rankings/clans", (req, res) =>
+  cocFetch(`/locations/${req.params.locationId}/rankings/clans`, res)
+);
+app.get("/locations/:locationId/rankings/players", (req, res) =>
+  cocFetch(`/locations/${req.params.locationId}/rankings/players`, res)
+);
+app.get("/locations/:locationId/rankings/clans-versus", (req, res) =>
+  cocFetch(`/locations/${req.params.locationId}/rankings/clans-versus`, res)
+);
+app.get("/locations/:locationId/rankings/players-versus", (req, res) =>
+  cocFetch(`/locations/${req.params.locationId}/rankings/players-versus`, res)
 );
 
-app.get("/locations/:id/rankings/clans", (req, res) =>
-  cocFetch(`/locations/${req.params.id}/rankings/clans`).then((data) =>
-    res.json(data)
-  )
+//
+// 🏷️ Labels
+//
+app.get("/labels/clans", (req, res) => cocFetch(`/labels/clans`, res));
+app.get("/labels/players", (req, res) => cocFetch(`/labels/players`, res));
+
+//
+// 🪙 Gold Pass
+//
+app.get("/goldpass/current", (req, res) =>
+  cocFetch(`/goldpass/seasons/current`, res)
 );
 
-app.get("/locations/:id/rankings/players", (req, res) =>
-  cocFetch(`/locations/${req.params.id}/rankings/players`).then((data) =>
-    res.json(data)
-  )
-);
+//
+// Default Route
+//
+app.get("/", (req, res) => {
+  res.send("✅ Clash of Clans API Proxy is running!");
+});
 
-// -------------------- LEAGUES --------------------
-app.get("/leagues", (req, res) =>
-  cocFetch(`/leagues`).then((data) => res.json(data))
-);
-
-app.get("/leagues/:id/seasons", (req, res) =>
-  cocFetch(`/leagues/${req.params.id}/seasons`).then((data) => res.json(data))
-);
-
-// -------------------- LABELS --------------------
-app.get("/labels/clans", (req, res) =>
-  cocFetch(`/labels/clans`).then((data) => res.json(data))
-);
-
-app.get("/labels/players", (req, res) =>
-  cocFetch(`/labels/players`).then((data) => res.json(data))
-);
-
-// -------------------- START --------------------
+//
+// Start Server
+//
 app.listen(PORT, () => console.log(`✅ Backend running on port ${PORT}`));
