@@ -15,6 +15,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// ✅ Health Check Route
+app.get("/", (req, res) => {
+  res.json({ status: "ok", message: "✅ CoC Dashboard Backend is running!" });
+});
+
 // Clan Info
 app.get("/clan/:tag", async (req, res) => {
   const tag = encodeURIComponent("#" + req.params.tag);
